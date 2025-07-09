@@ -1,0 +1,15 @@
+current directory: /Users/jaskirat/Documents/firebase_app/vendor/bundle/ruby/2.7.0/gems/nkf-0.2.0/ext/nkf
+/Users/jaskirat/.rbenv/versions/2.7.5/bin/ruby -I /Users/jaskirat/.rbenv/versions/2.7.5/lib/ruby/2.7.0 -r ./siteconf20250709-10204-1vyecb1.rb extconf.rb
+creating Makefile
+
+current directory: /Users/jaskirat/Documents/firebase_app/vendor/bundle/ruby/2.7.0/gems/nkf-0.2.0/ext/nkf
+make "DESTDIR=" clean
+
+current directory: /Users/jaskirat/Documents/firebase_app/vendor/bundle/ruby/2.7.0/gems/nkf-0.2.0/ext/nkf
+make "DESTDIR="
+compiling nkf.c
+linking shared-object nkf.bundle
+
+current directory: /Users/jaskirat/Documents/firebase_app/vendor/bundle/ruby/2.7.0/gems/nkf-0.2.0/ext/nkf
+make "DESTDIR=" install
+/opt/homebrew/bin/ginstall -c -m 0755 nkf.bundle ./.gem.20250709-10204-y734l2
