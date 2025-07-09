@@ -5,6 +5,7 @@ export type AppStackParamList = {
 
 export type AuthenticationStackParamList = {
   LoginScreen: undefined;
+  SignUpScreen: undefined;
   SplashScreen: undefined;
 };
 

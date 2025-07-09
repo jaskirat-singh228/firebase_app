@@ -1,3 +1,4 @@
+import auth from '@react-native-firebase/auth';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import BaseTextInput from 'components/base_components/base_text_input';
 import AnimatedLoaderButton from 'components/molecules/animated_loader_button';
@@ -6,14 +7,13 @@ import {Controller, SubmitHandler, useForm} from 'react-hook-form';
 import {KeyboardAvoidingView, SafeAreaView} from 'react-native';
 import {TextInput, useTheme} from 'react-native-paper';
 import {useDispatch} from 'react-redux';
-import {TValidateLoginDetailResponse} from 'types/api_response_data_models';
 import {AuthenticationStackParamList} from 'types/navigation_types';
 import {ms, vs} from 'utilities/scale_utils';
-import {loginUser} from 'utilities/utils';
+import {showToast} from 'utilities/utils';
 
-type LoginScreenProps = NativeStackScreenProps<
+type SignUpScreenProps = NativeStackScreenProps<
   AuthenticationStackParamList,
-  'LoginScreen'
+  'SignUpScreen'
 >;
 
 type TFormData = {
@@ -21,10 +21,11 @@ type TFormData = {
   password: string;
 };
 
-const LoginScreen: React.FC<LoginScreenProps> = props => {
+const SignUpScreen: React.FC<SignUpScreenProps> = props => {
   const theme = useTheme();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [showPassword, setShowPassword] = React.useState<boolean>(false);
+
   const {
     control,
     reset,
@@ -38,22 +39,26 @@ const LoginScreen: React.FC<LoginScreenProps> = props => {
 
   const submitClickHandler: SubmitHandler<TFormData> = React.useCallback(
     values => {
-      setIsLoading(true);
+      try {
+        auth()
+          .createUserWithEmailAndPassword(values.email, values.password)
+          .then(() => {
+            showToast('User account created & signed in!', 'success');
+          })
+          .catch(error => {
+            if (error.code === 'auth/email-already-in-use') {
+              showToast('That email address is already in use!', 'error');
+            }
 
-      setTimeout(() => {
-        setIsLoading(false);
-        const loginResponse: TValidateLoginDetailResponse = {
-          success: false,
-          message: 'Login Success!',
-          responseData: {
-            userEmail: values?.email ?? '',
-            userPassword: values?.password ?? '',
-            token: (values?.email ?? '') + (values?.password ?? ''),
-            refreshToken: (values?.email ?? '') + (values?.password ?? ''),
-          },
-        };
-        loginUser(dispatch, loginResponse);
-      }, 2500);
+            if (error.code === 'auth/invalid-email') {
+              showToast('That email address is invalid!', 'error');
+            }
+
+            console.error(error, 'error');
+          });
+      } catch (error: any) {
+        console.error('Signup error:', error.message);
+      }
     },
     [],
   );
@@ -122,20 +127,14 @@ const LoginScreen: React.FC<LoginScreenProps> = props => {
             />
           )}
         />
-
         <AnimatedLoaderButton
           isLoading={isLoading}
-          title={'Login'}
+          title={'Sign Up'}
           onPress={handleSubmit(submitClickHandler)}
-        />
-        <AnimatedLoaderButton
-          isLoading={isLoading}
-          title={'Sign In'}
-          onPress={() => props.navigation.navigate('SignUpScreen')}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
-export default LoginScreen;
+export default SignUpScreen;
