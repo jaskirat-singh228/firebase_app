@@ -3,6 +3,7 @@ import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
 import Firebase
+import GoogleSignIn/GIDSignIn
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {

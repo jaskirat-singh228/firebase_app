@@ -1,3 +1,4 @@
+import auth from '@react-native-firebase/auth';
 import BaseText from 'components/base_components/base_text';
 import AnimatedLoaderButton from 'components/molecules/animated_loader_button';
 import {useDialog} from 'context/app_dialog_provider';
@@ -8,14 +9,14 @@ import {useDispatch, useSelector} from 'react-redux';
 import {RootState} from 'store';
 import {DashbordBottomTabBarParamList} from 'types/navigation_types';
 import {vs} from 'utilities/scale_utils';
-import {logoutUser} from 'utilities/utils';
+import {logoutUser, showToast} from 'utilities/utils';
 
 type HomeScreenProps = MaterialBottomTabScreenProps<
   DashbordBottomTabBarParamList,
   'HomeScreen'
 >;
 
-const HomeScreen: React.FC<HomeScreenProps> = () => {
+const HomeScreen: React.FC<HomeScreenProps> = props => {
   const theme = useTheme();
   const {showDialog, hideDialog} = useDialog();
   const dispatch = useDispatch();
@@ -27,7 +28,18 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
       title: 'Logout',
       actionType: 'error',
       isConfirmDestructive: true,
-      onConfirm: () => logoutUser(dispatch),
+      onConfirm: async () => {
+        try {
+          await auth().signOut();
+          logoutUser(dispatch);
+          showToast('User logged out successfully!', 'success');
+        } catch (error) {
+          console.error('Firebase sign out error:', error);
+          showToast('Failed to logout. Try again.', 'error');
+        } finally {
+          hideDialog();
+        }
+      },
       onDismiss: hideDialog,
     });
   }, []);
@@ -36,7 +48,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     <View style={style.mainContainer}>
       <BaseText
         style={theme.fonts.displayLarge}
-        children={`Welcome ${userData?.userName ?? ''}`}
+        children={`Welcome ${userData?.userEmail ?? ''}`}
       />
       <AnimatedLoaderButton
         isLoading={false}

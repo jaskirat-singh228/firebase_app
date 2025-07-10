@@ -1,4 +1,5 @@
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import BaseTextInput from 'components/base_components/base_text_input';
 import AnimatedLoaderButton from 'components/molecules/animated_loader_button';
@@ -7,9 +8,13 @@ import {Controller, SubmitHandler, useForm} from 'react-hook-form';
 import {KeyboardAvoidingView, SafeAreaView} from 'react-native';
 import {TextInput, useTheme} from 'react-native-paper';
 import {useDispatch} from 'react-redux';
+import {
+  TValidateLoginDetailData,
+  TValidateLoginDetailResponse,
+} from 'types/api_response_data_models';
 import {AuthenticationStackParamList} from 'types/navigation_types';
 import {ms, vs} from 'utilities/scale_utils';
-import {showToast} from 'utilities/utils';
+import {loginUser, showToast} from 'utilities/utils';
 
 type SignUpScreenProps = NativeStackScreenProps<
   AuthenticationStackParamList,
@@ -38,26 +43,51 @@ const SignUpScreen: React.FC<SignUpScreenProps> = props => {
   const dispatch = useDispatch();
 
   const submitClickHandler: SubmitHandler<TFormData> = React.useCallback(
-    values => {
+    async values => {
+      setIsLoading(true);
       try {
-        auth()
-          .createUserWithEmailAndPassword(values.email, values.password)
-          .then(() => {
-            showToast('User account created & signed in!', 'success');
-          })
-          .catch(error => {
-            if (error.code === 'auth/email-already-in-use') {
-              showToast('That email address is already in use!', 'error');
-            }
+        const res = await auth().createUserWithEmailAndPassword(
+          values.email,
+          values.password,
+        );
 
-            if (error.code === 'auth/invalid-email') {
-              showToast('That email address is invalid!', 'error');
-            }
+        showToast('User signed up successfully!', 'success');
 
-            console.error(error, 'error');
-          });
+        let data: TValidateLoginDetailData = {
+          userEmail: values.email,
+          userPassword: values.password,
+          token: (await res.user?.getIdToken()) ?? '',
+        };
+
+        let response: TValidateLoginDetailResponse = {
+          success: true,
+          message: 'User logged in successfully!',
+          responseData: data,
+        };
+        loginUser(dispatch, response);
+
+        const userId = res.user.uid;
+        await firestore().collection('Users').doc(userId).set({
+          email: values.email,
+          password: values.password,
+          createdAt: firestore.FieldValue.serverTimestamp(),
+        });
       } catch (error: any) {
-        console.error('Signup error:', error.message);
+        if (error.code === 'auth/invalid-email') {
+          showToast('The email address is badly formatted!', 'error');
+        } else if (error.code === 'auth/weak-password') {
+          showToast('The given password is invalid!', 'error');
+        } else if (error.code === 'auth/email-already-in-use') {
+          showToast(
+            'The email address is already in use by another account!',
+            'error',
+          );
+        } else {
+          console.log(error, 'Unhandled signup error');
+          showToast('Something went wrong. Try again!', 'error');
+        }
+      } finally {
+        setIsLoading(false);
       }
     },
     [],

@@ -8,5 +8,5 @@ export type TValidateLoginDetailData = {
   userEmail: string;
   userPassword: string;
   token: string;
-  refreshToken: string;
+  // refreshToken: string;
 };
