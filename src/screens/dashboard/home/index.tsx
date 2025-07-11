@@ -1,4 +1,5 @@
 import auth from '@react-native-firebase/auth';
+import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import BaseText from 'components/base_components/base_text';
 import AnimatedLoaderButton from 'components/molecules/animated_loader_button';
 import {useDialog} from 'context/app_dialog_provider';
@@ -31,6 +32,7 @@ const HomeScreen: React.FC<HomeScreenProps> = props => {
       onConfirm: async () => {
         try {
           await auth().signOut();
+          await GoogleSignin.signOut();
           logoutUser(dispatch);
           showToast('User logged out successfully!', 'success');
         } catch (error) {
@@ -47,7 +49,7 @@ const HomeScreen: React.FC<HomeScreenProps> = props => {
   return (
     <View style={style.mainContainer}>
       <BaseText
-        style={theme.fonts.displayLarge}
+        style={theme.fonts.displayMedium}
         children={`Welcome ${userData?.userEmail ?? ''}`}
       />
       <AnimatedLoaderButton

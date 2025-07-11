@@ -7,14 +7,9 @@ import React from 'react';
 import {Controller, SubmitHandler, useForm} from 'react-hook-form';
 import {KeyboardAvoidingView, SafeAreaView} from 'react-native';
 import {TextInput, useTheme} from 'react-native-paper';
-import {useDispatch} from 'react-redux';
-import {
-  TValidateLoginDetailData,
-  TValidateLoginDetailResponse,
-} from 'types/api_response_data_models';
 import {AuthenticationStackParamList} from 'types/navigation_types';
 import {ms, vs} from 'utilities/scale_utils';
-import {loginUser, showToast} from 'utilities/utils';
+import {showToast} from 'utilities/utils';
 
 type SignUpScreenProps = NativeStackScreenProps<
   AuthenticationStackParamList,
@@ -40,8 +35,6 @@ const SignUpScreen: React.FC<SignUpScreenProps> = props => {
     formState: {errors},
   } = useForm<TFormData>();
 
-  const dispatch = useDispatch();
-
   const submitClickHandler: SubmitHandler<TFormData> = React.useCallback(
     async values => {
       setIsLoading(true);
@@ -51,25 +44,19 @@ const SignUpScreen: React.FC<SignUpScreenProps> = props => {
           values.password,
         );
 
-        showToast('User signed up successfully!', 'success');
+        console.log(JSON.stringify(res), 'hjgvsvsvdscvsdhcj');
 
-        let data: TValidateLoginDetailData = {
-          userEmail: values.email,
-          userPassword: values.password,
-          token: (await res.user?.getIdToken()) ?? '',
-        };
-
-        let response: TValidateLoginDetailResponse = {
-          success: true,
-          message: 'User logged in successfully!',
-          responseData: data,
-        };
-        loginUser(dispatch, response);
-
+        props.navigation.goBack();
+        showToast(
+          'You are registered successfuly, login with same credentials!',
+          'success',
+        );
         const userId = res.user.uid;
         await firestore().collection('Users').doc(userId).set({
+          userId: userId,
           email: values.email,
           password: values.password,
+          providerId: res.additionalUserInfo?.providerId,
           createdAt: firestore.FieldValue.serverTimestamp(),
         });
       } catch (error: any) {

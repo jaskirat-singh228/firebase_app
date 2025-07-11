@@ -1,9 +1,6 @@
 import auth from '@react-native-firebase/auth';
-import {
-  GoogleSignin,
-  isErrorWithCode,
-  statusCodes,
-} from '@react-native-google-signin/google-signin';
+import firestore from '@react-native-firebase/firestore';
+import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import BaseTextInput from 'components/base_components/base_text_input';
 import AnimatedLoaderButton from 'components/molecules/animated_loader_button';
@@ -30,10 +27,22 @@ type TFormData = {
   password: string;
 };
 
+type TFirebaseUserData = {
+  email: string;
+  password: string;
+  providerId: string;
+  createdAt: string;
+  key?: string;
+};
+
 const LoginScreen: React.FC<LoginScreenProps> = props => {
   const theme = useTheme();
+  const dispatch = useDispatch();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [isLoginLoading, setIsLoginLoading] = React.useState<boolean>(false);
   const [showPassword, setShowPassword] = React.useState<boolean>(false);
+  const [userList, setUserList] = React.useState<TFirebaseUserData[]>([]);
+
   const {
     control,
     reset,
@@ -43,130 +52,118 @@ const LoginScreen: React.FC<LoginScreenProps> = props => {
     formState: {errors},
   } = useForm<TFormData>();
 
-  const dispatch = useDispatch();
-
   React.useEffect(() => {
-    GoogleSignin.configure({
-      webClientId:
-        '980590160503-hnfoo8vc0r66gbqpuciomj4bd5dd22ta.apps.googleusercontent.com',
-      iosClientId:
-        '980590160503-5hkbjoa71pah8s9eoqe9lehm2n74oaqi.apps.googleusercontent.com',
-    });
+    GoogleSignin.configure({});
   }, []);
 
-  // const signInWithGoogle = async () => {
-  //   try {
-  //     // Sign in with Google
-  //     await GoogleSignin.hasPlayServices();
-  //     const googleSignInResult = await GoogleSignin.signIn();
-
-  //     console.log(googleSignInResult, '<<<<<<<<=====googleSignInResult');
-  //     const idToken = googleSignInResult.data?.idToken ?? null;
-
-  //     // Create a Firebase credential with the token
-  //     const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-
-  //     // Sign-in the user with the credential
-  //     const userCredential =
-  //       await auth().signInWithCredential(googleCredential);
-
-  //     console.log('User signed in with Google:', userCredential.user);
-  //     return auth().signInWithCredential(googleCredential);
-  //   } catch (error: any) {
-  //     if (error.code === 'auth/internal-error') {
-  //       showToast('An internal error has occurred, please try again!', 'error');
-  //     }
-  //     console.error('Google Sign-In Error:', error);
-  //   }
-  // };
-
-  // Somewhere in your code
   const signInWithGoogle = async () => {
     try {
-      const value = await GoogleSignin.hasPlayServices();
-      console.log('hasPlayServices ==> ', value);
+      // Sign in with Google
+      await GoogleSignin.hasPlayServices();
+      const googleSignInResult = await GoogleSignin.signIn();
+      const idToken = googleSignInResult.data?.idToken ?? null;
 
-      GoogleSignin.hasPlayServices()
-        .then(hasPlayService => {
-          if (hasPlayService) {
-            GoogleSignin.signIn()
-              .then(userInfo => {
-                console.log(JSON.stringify(userInfo));
-              })
-              .catch(e => {
-                console.log('ERROR IS: ' + JSON.stringify(e));
-              });
-          }
-        })
-        .catch(e => {
-          console.log('ERROR IS: ' + JSON.stringify(e));
-        });
-    } catch (error) {
+      // Create a Firebase credential with the token
+      const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+
+      // Sign-in the user with the credential
+      setIsLoading(true);
+      const userCredential =
+        await auth().signInWithCredential(googleCredential);
+      const token = (await userCredential.user.getIdToken()) ?? '';
+      const userId = userCredential.user.uid;
       console.log(
-        'Google Sign in error ===> ',
-        JSON.stringify(error, null, ' '),
+        JSON.stringify(userCredential),
+        'userCredentialuserCredentialuserCredential',
       );
-      if (isErrorWithCode(error)) {
-        switch (error.code) {
-          case statusCodes.IN_PROGRESS:
-            // operation (eg. sign in) already in progress
-            break;
-          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-            // Android only, play services not available or outdated
-            break;
-          default:
-          // some other error happened
-        }
-      } else {
-        // an error that's not related to google sign in occurred
-      }
+
+      await firestore().collection('Users').doc(userId).set({
+        email: userCredential.user.email,
+        token: token,
+        providerId: userCredential.additionalUserInfo?.providerId.toString(),
+        createdAt: firestore.FieldValue.serverTimestamp(),
+      });
+
+      let data: TValidateLoginDetailData = {
+        userEmail: userCredential.user.email ?? '',
+        token: token,
+        providerId: userCredential.user.providerId.toString(),
+      };
+
+      let response: TValidateLoginDetailResponse = {
+        success: true,
+        message: 'User logged in successfully!',
+        responseData: data,
+      };
+
+      loginUser(dispatch, response);
+      showToast(response.message, 'success');
+    } catch (error: any) {
+      if (error.code === 'auth/internal-error') return;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const submitClickHandler: SubmitHandler<TFormData> = React.useCallback(
     async values => {
-      setIsLoading(true);
+      // setIsLoginLoading(true);
+      // try {
+      //   const res = await auth().signInWithEmailAndPassword(
+      //     values.email,
+      //     values.password,
+      //   );
+      //   const token = (await res.user?.getIdToken()) ?? '';
+      //   const providerId = res.additionalUserInfo?.providerId.toString() ?? '';
+
+      //   let data: TValidateLoginDetailData = {
+      //     userEmail: values.email,
+      //     userPassword: values.password,
+      //     token: token,
+      //     providerId: providerId,
+      //   };
+
+      //   let response: TValidateLoginDetailResponse = {
+      //     success: true,
+      //     message: 'User logged in successfully!',
+      //     responseData: data,
+      //   };
+      //   if (providerId === 'password') {
+      //     loginUser(dispatch, response);
+      //     showToast(response.message, 'success');
+      //   } else return;
+      // } catch (error: any) {
+      //   if (error.code === 'auth/invalid-email') {
+      //     showToast('The email address is badly formatted!', 'error');
+      //   } else if (error.code === 'auth/weak-password') {
+      //     showToast('The given password is invalid!', 'error');
+      //   } else if (error.code === 'auth/email-already-in-use') {
+      //     showToast(
+      //       'The email address is already in use by another account!',
+      //       'error',
+      //     );
+      //   } else {
+      //     console.log(error, '>>>>>>EROR');
+      //     return showToast(error.code, 'error');
+      //   }
+      // } finally {
+      //   setIsLoginLoading(false);
+      // }
+
       try {
-        const res = await auth().signInWithEmailAndPassword(
-          values.email,
-          values.password,
-        );
+        const isUserPresent = await firestore()
+          .collection('Users')
+          .where('email', '==', values?.email ?? '')
+          .get();
 
-        console.log('Response ==> ', JSON.stringify(res));
+        if (isUserPresent.empty) return showToast('Invalid Email', 'error');
 
-        const token = (await res.user?.getIdToken()) ?? '';
+        const isPassword = isUserPresent.docs[0].data().pasword;
 
-        let data: TValidateLoginDetailData = {
-          userEmail: values.email,
-          userPassword: values.password,
-          token: token,
-        };
-
-        let response: TValidateLoginDetailResponse = {
-          success: true,
-          message: 'User logged in successfully!',
-          responseData: data,
-        };
-        loginUser(dispatch, response);
-        showToast(response.message, 'success');
-      } catch (error: any) {
-        console.log(error);
-
-        if (error.code === 'auth/invalid-email') {
-          showToast('The email address is badly formatted!', 'error');
-        } else if (error.code === 'auth/weak-password') {
-          showToast('The given password is invalid!', 'error');
-        } else if (error.code === 'auth/email-already-in-use') {
-          showToast(
-            'The email address is already in use by another account!',
-            'error',
-          );
-        } else {
-          console.log(error, 'Unhandled signup error');
-          showToast('Something went wrong. Try again!', 'error');
-        }
-      } finally {
-        setIsLoading(false);
+        if (isPassword === '')
+          return showToast('Password not available ', 'error');
+      } catch (error) {
+        showToast(JSON.stringify(error), 'error');
       }
     },
     [],
@@ -238,7 +235,7 @@ const LoginScreen: React.FC<LoginScreenProps> = props => {
         />
 
         <AnimatedLoaderButton
-          isLoading={isLoading}
+          isLoading={isLoginLoading}
           title={'Login'}
           onPress={handleSubmit(submitClickHandler)}
         />
@@ -247,6 +244,7 @@ const LoginScreen: React.FC<LoginScreenProps> = props => {
           onPress={() => props.navigation.navigate('SignUpScreen')}
         />
         <AnimatedLoaderButton
+          isLoading={isLoading}
           title={'Login with google'}
           onPress={signInWithGoogle}
         />
