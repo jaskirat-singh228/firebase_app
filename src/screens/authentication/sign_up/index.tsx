@@ -44,8 +44,6 @@ const SignUpScreen: React.FC<SignUpScreenProps> = props => {
           values.password,
         );
 
-        console.log(JSON.stringify(res), 'hjgvsvsvdscvsdhcj');
-
         props.navigation.goBack();
         showToast(
           'You are registered successfuly, login with same credentials!',
@@ -63,7 +61,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = props => {
         if (error.code === 'auth/invalid-email') {
           showToast('The email address is badly formatted!', 'error');
         } else if (error.code === 'auth/weak-password') {
-          showToast('The given password is invalid!', 'error');
+          showToast('The given password is too weak!', 'error');
         } else if (error.code === 'auth/email-already-in-use') {
           showToast(
             'The email address is already in use by another account!',

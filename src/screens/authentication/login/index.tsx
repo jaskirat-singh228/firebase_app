@@ -72,13 +72,11 @@ const LoginScreen: React.FC<LoginScreenProps> = props => {
         await auth().signInWithCredential(googleCredential);
       const token = (await userCredential.user.getIdToken()) ?? '';
       const userId = userCredential.user.uid;
-      console.log(
-        JSON.stringify(userCredential),
-        'userCredentialuserCredentialuserCredential',
-      );
+      console.log(JSON.stringify(userCredential), 'userCredentiallog');
 
       await firestore().collection('Users').doc(userId).set({
         email: userCredential.user.email,
+        password: '',
         token: token,
         providerId: userCredential.additionalUserInfo?.providerId.toString(),
         createdAt: firestore.FieldValue.serverTimestamp(),
@@ -105,69 +103,57 @@ const LoginScreen: React.FC<LoginScreenProps> = props => {
     }
   };
 
-  const submitClickHandler: SubmitHandler<TFormData> = React.useCallback(
-    async values => {
-      // setIsLoginLoading(true);
-      // try {
-      //   const res = await auth().signInWithEmailAndPassword(
-      //     values.email,
-      //     values.password,
-      //   );
-      //   const token = (await res.user?.getIdToken()) ?? '';
-      //   const providerId = res.additionalUserInfo?.providerId.toString() ?? '';
-
-      //   let data: TValidateLoginDetailData = {
-      //     userEmail: values.email,
-      //     userPassword: values.password,
-      //     token: token,
-      //     providerId: providerId,
-      //   };
-
-      //   let response: TValidateLoginDetailResponse = {
-      //     success: true,
-      //     message: 'User logged in successfully!',
-      //     responseData: data,
-      //   };
-      //   if (providerId === 'password') {
-      //     loginUser(dispatch, response);
-      //     showToast(response.message, 'success');
-      //   } else return;
-      // } catch (error: any) {
-      //   if (error.code === 'auth/invalid-email') {
-      //     showToast('The email address is badly formatted!', 'error');
-      //   } else if (error.code === 'auth/weak-password') {
-      //     showToast('The given password is invalid!', 'error');
-      //   } else if (error.code === 'auth/email-already-in-use') {
-      //     showToast(
-      //       'The email address is already in use by another account!',
-      //       'error',
-      //     );
-      //   } else {
-      //     console.log(error, '>>>>>>EROR');
-      //     return showToast(error.code, 'error');
-      //   }
-      // } finally {
-      //   setIsLoginLoading(false);
-      // }
-
+  const submitClickHandler: SubmitHandler<TFormData> = async values => {
+    setIsLoginLoading(true);
+    try {
       try {
         const isUserPresent = await firestore()
           .collection('Users')
           .where('email', '==', values?.email ?? '')
           .get();
-
-        if (isUserPresent.empty) return showToast('Invalid Email', 'error');
-
-        const isPassword = isUserPresent.docs[0].data().pasword;
-
-        if (isPassword === '')
-          return showToast('Password not available ', 'error');
+        const isPassword = isUserPresent.docs[0].data().password;
+        if (isPassword === '') return showToast('Login with google.', 'error');
       } catch (error) {
-        showToast(JSON.stringify(error), 'error');
+        console.log(error, '===>ERROR');
       }
-    },
-    [],
-  );
+      const res = await auth().signInWithEmailAndPassword(
+        values.email,
+        values.password,
+      );
+      const token = (await res.user?.getIdToken()) ?? '';
+      const providerId = res.additionalUserInfo?.providerId.toString() ?? '';
+      let data: TValidateLoginDetailData = {
+        userEmail: values.email,
+        userPassword: values.password,
+        token: token,
+        providerId: providerId,
+      };
+
+      let response: TValidateLoginDetailResponse = {
+        success: true,
+        message: 'User logged in successfully!',
+        responseData: data,
+      };
+
+      loginUser(dispatch, response);
+      showToast(response.message, 'success');
+    } catch (error: any) {
+      console.log(error);
+
+      if (error.code === 'auth/invalid-email') {
+        showToast('The email address is badly formatted!', 'error');
+      } else if (error.code === 'auth/invalid-credential') {
+        showToast('Invalid credentials!', 'error');
+      } else if (error.code === 'auth/too-many-requests') {
+        showToast(
+          'We have blocked all requests from this device due to unusual activity. Try again later.',
+          'error',
+        );
+      }
+    } finally {
+      setIsLoginLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView
