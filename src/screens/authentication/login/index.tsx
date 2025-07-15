@@ -53,49 +53,51 @@ const LoginScreen: React.FC<LoginScreenProps> = props => {
   } = useForm<TFormData>();
 
   React.useEffect(() => {
-    GoogleSignin.configure({});
+    GoogleSignin.configure({
+      webClientId:
+        '355681824510-0n8rtf91fflsf28a0tfqp1a5vfp6jvdf.apps.googleusercontent.com',
+    });
   }, []);
 
   const signInWithGoogle = async () => {
     try {
       // Sign in with Google
       await GoogleSignin.hasPlayServices();
-      const googleSignInResult = await GoogleSignin.signIn();
-      const idToken = googleSignInResult.data?.idToken ?? null;
+      const {data, type} = await GoogleSignin.signIn();
+      const idToken = data?.idToken ?? null;
 
       // Create a Firebase credential with the token
       const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-
       // Sign-in the user with the credential
       setIsLoading(true);
       const userCredential =
         await auth().signInWithCredential(googleCredential);
       const token = (await userCredential.user.getIdToken()) ?? '';
       const userId = userCredential.user.uid;
-      console.log(JSON.stringify(userCredential), 'userCredentiallog');
 
       await firestore().collection('Users').doc(userId).set({
         email: userCredential.user.email,
         password: '',
         token: token,
-        providerId: userCredential.additionalUserInfo?.providerId.toString(),
+        providerId: userCredential.additionalUserInfo?.providerId,
         createdAt: firestore.FieldValue.serverTimestamp(),
       });
 
-      let data: TValidateLoginDetailData = {
+      let responseData: TValidateLoginDetailData = {
         userEmail: userCredential.user.email ?? '',
         token: token,
-        providerId: userCredential.user.providerId.toString(),
+        providerId: userCredential.user.providerId,
       };
 
       let response: TValidateLoginDetailResponse = {
         success: true,
         message: 'User logged in successfully!',
-        responseData: data,
+        responseData: responseData,
       };
-
-      loginUser(dispatch, response);
-      showToast(response.message, 'success');
+      if (type === 'success') {
+        loginUser(dispatch, response);
+        showToast(response.message, 'success');
+      } else return;
     } catch (error: any) {
       if (error.code === 'auth/internal-error') return;
     } finally {
@@ -121,7 +123,7 @@ const LoginScreen: React.FC<LoginScreenProps> = props => {
         values.password,
       );
       const token = (await res.user?.getIdToken()) ?? '';
-      const providerId = res.additionalUserInfo?.providerId.toString() ?? '';
+      const providerId = res.additionalUserInfo?.providerId ?? '';
       let data: TValidateLoginDetailData = {
         userEmail: values.email,
         userPassword: values.password,
