@@ -108,6 +108,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = props => {
         <View>
           <Button children="Toggle Crashlytics" onPress={toggleCrashlytics} />
           <Button children="Crash" onPress={() => crashlytics().crash()} />
+          {/* other crash */}
           {/* <Button
             children={'Test Crash'}
             onPress={() => {

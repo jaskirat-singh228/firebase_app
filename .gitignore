@@ -79,3 +79,4 @@ package-lock.json
 yarn.lock
 /.yarn
 ios/Podfile.lock
+.vercel
