@@ -1,16 +1,17 @@
-import auth from '@react-native-firebase/auth';
-import {GoogleSignin} from '@react-native-google-signin/google-signin';
+import crashlytics from '@react-native-firebase/crashlytics';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import BaseText from 'components/base_components/base_text';
 import AnimatedLoaderButton from 'components/molecules/animated_loader_button';
-import {useDialog} from 'context/app_dialog_provider';
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {ScrollView, StyleSheet, View} from 'react-native';
 import {MaterialBottomTabScreenProps, useTheme} from 'react-native-paper';
-import {useDispatch, useSelector} from 'react-redux';
-import {RootState} from 'store';
-import {DashbordBottomTabBarParamList} from 'types/navigation_types';
-import {vs} from 'utilities/scale_utils';
-import {logoutUser, showToast} from 'utilities/utils';
+import {
+  AppStackParamList,
+  DashbordBottomTabBarParamList,
+} from 'types/navigation_types';
+import {AnalyticEvent} from 'utilities/analytic_event';
+import {ms, vs} from 'utilities/scale_utils';
 
 type HomeScreenProps = MaterialBottomTabScreenProps<
   DashbordBottomTabBarParamList,
@@ -19,45 +20,68 @@ type HomeScreenProps = MaterialBottomTabScreenProps<
 
 const HomeScreen: React.FC<HomeScreenProps> = props => {
   const theme = useTheme();
-  const {showDialog, hideDialog} = useDialog();
-  const dispatch = useDispatch();
-  const userData = useSelector((state: RootState) => state.loginData.loginData);
+  const appStackParamList =
+    useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+  const [enabled, setEnabled] = React.useState(false);
 
-  const handleLogoutClick = React.useCallback(() => {
-    showDialog({
-      message: 'Do you want to logout?',
-      title: 'Logout',
-      actionType: 'error',
-      isConfirmDestructive: true,
-      onConfirm: async () => {
-        try {
-          await auth().signOut();
-          await GoogleSignin.signOut();
-          logoutUser(dispatch);
-          showToast('User logged out successfully!', 'success');
-        } catch (error) {
-          console.error('Firebase sign out error:', error);
-          showToast('Failed to logout. Try again.', 'error');
-        } finally {
-          hideDialog();
-        }
+  const toggleCrashlytics = async () => {
+    await crashlytics()
+      .setCrashlyticsCollectionEnabled(!enabled)
+      .then(() => setEnabled(crashlytics().isCrashlyticsCollectionEnabled));
+  };
+
+  React.useEffect(() => {
+    crashlytics().log('Testing crash');
+
+    AnalyticEvent({
+      eventName: 'AccountScreenRender',
+      eventPayload: {
+        name: 'Account Screen Render',
       },
-      onDismiss: hideDialog,
     });
   }, []);
 
   return (
-    <View style={style.mainContainer}>
-      <BaseText
-        style={theme.fonts.displayMedium}
-        children={`Welcome ${userData?.userEmail ?? ''}`}
-      />
-      <AnimatedLoaderButton
-        isLoading={false}
-        title={'Logout'}
-        onPress={handleLogoutClick}
-      />
-    </View>
+    <ScrollView style={style.mainContainer}>
+      <View style={style.container}>
+        <AnimatedLoaderButton
+          title="Analytic Button"
+          alignSelfCenter
+          onPress={() => {
+            AnalyticEvent({
+              eventName: 'analyticButtonPress',
+              eventPayload: {
+                name: 'Jaskirat Singh',
+                email: 'jaskirat.singh@weexcel.in',
+              },
+            });
+          }}
+        />
+        <BaseText
+          children={`Crashlytics is currently ${enabled ? 'enabled' : 'disabled'}`}
+          style={theme.fonts.displayMedium}
+        />
+        <AnimatedLoaderButton
+          title="Toggle Crashlytics"
+          onPress={toggleCrashlytics}
+        />
+        <AnimatedLoaderButton
+          title="Crash"
+          onPress={() => crashlytics().crash()}
+        />
+        {/* other crash */}
+        {/* <Button
+            children={'Test Crash'}
+            onPress={() => {
+              reff?.current?.present();
+            }}
+          /> */}
+        <AnimatedLoaderButton
+          title="Todo List"
+          onPress={() => appStackParamList.navigate('TodoScreen')}
+        />
+      </View>
+    </ScrollView>
   );
 };
 
@@ -66,8 +90,13 @@ export default HomeScreen;
 const style = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    gap: vs(25),
-    justifyContent: 'center',
+    width: '100%',
+    padding: ms(15),
+  },
+  container: {
+    height: '100%',
+    width: '100%',
+    gap: vs(10),
     alignItems: 'center',
   },
 });

@@ -1,31 +1,58 @@
-import MaterialIcons from '@react-native-vector-icons/material-design-icons';
+import {useNavigation} from '@react-navigation/native';
+import BaseText from 'components/base_components/base_text';
+import BounceView from 'components/molecules/bounce_view';
 import React from 'react';
-import { Text, View } from 'react-native';
-import { useTheme } from 'react-native-paper';
-import { ms } from 'utilities/scale_utils';
-import BounceView from '../bounce_view';
-import { style } from './style';
+import {View} from 'react-native';
+import {Icon, useTheme} from 'react-native-paper';
+import {MaterialIcon, SCREEN_WIDTH} from 'utilities/constants';
+import {getTitleTextSize} from 'utilities/global_styles';
+import {ms} from 'utilities/scale_utils';
+import {style} from './style';
 
 type BackWithTitleCompProps = {
   title: string;
   onBackPress?: () => void;
+  right?: React.ReactNode;
 };
 
-const AppBarViewComp: React.FC<BackWithTitleCompProps> = props => {
-  const { title } = props;
+const BackWithTitleComp: React.FC<BackWithTitleCompProps> = props => {
+  const {title} = props;
   const theme = useTheme();
+  const viewStyle = style(theme);
+  const navigation = useNavigation();
+
   return (
-    <View style={style.mainContainer}>
-      <BounceView onPress={props?.onBackPress}>
-        <MaterialIcons
-          name={'chevron-left'}
-          size={ms(40)}
-          color={theme.colors.iconColor.black}
+    <View style={viewStyle.mainContainer}>
+      <BounceView
+        style={{alignItems: 'center'}}
+        onPress={props?.onBackPress ? props?.onBackPress : navigation.goBack}>
+        <Icon
+          source={MaterialIcon.CHEVRON_LEFT}
+          size={ms(35)}
+          color={theme.colors.iconColor.white}
         />
       </BounceView>
-      <Text style={[theme.fonts.titleLarge, { flex: 1 }]}>{title}</Text>
+      <BounceView
+        style={{}}
+        onPress={props?.onBackPress ? props?.onBackPress : navigation.goBack}>
+        <BaseText
+          style={[
+            {
+              maxWidth: SCREEN_WIDTH * 0.7,
+              color: theme.colors.textColor.white,
+              fontWeight: 'bold',
+            },
+            getTitleTextSize(title, theme),
+          ]}
+          ellipsizeMode={'tail'}
+          numberOfLines={1}
+          children={title}
+        />
+      </BounceView>
+      <View style={{flex: 1}} />
+      {(props?.right && props?.right) ?? undefined}
     </View>
   );
 };
 
-export const AppBarView = React.memo(AppBarViewComp);
+export const BackWithTitleHeader = React.memo(BackWithTitleComp);

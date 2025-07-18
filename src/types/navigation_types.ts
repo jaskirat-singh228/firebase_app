@@ -1,6 +1,8 @@
 export type AppStackParamList = {
   DashBoardScreen: undefined;
   RecipesScreen: undefined;
+
+  TodoScreen: undefined;
 };
 
 export type AuthenticationStackParamList = {

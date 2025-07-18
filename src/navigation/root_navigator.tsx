@@ -49,7 +49,7 @@ const RootNavigator: React.FC = () => {
       <RootStack.Navigator
         screenOptions={{
           headerShown: false,
-          statusBarStyle: isDarkTheme ? 'light' : 'dark',
+          statusBarStyle: 'light',
           statusBarTranslucent: false,
           statusBarBackgroundColor: theme.colors.statusBar.backgroundColor,
         }}>

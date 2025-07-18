@@ -1,3 +1,4 @@
+import {useNetInfo} from '@react-native-community/netinfo';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import AppLoader from 'components/hoc/app_loader';
 import {AppDialogProvider} from 'context/app_dialog_provider';
@@ -5,6 +6,7 @@ import {ThemeProvider, useThemeContext} from 'context/theme_provider';
 import RootNavigator from 'navigation/root_navigator';
 import React from 'react';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import 'react-native-get-random-values';
 import {PaperProvider} from 'react-native-paper';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import Toast, {
@@ -16,6 +18,7 @@ import {Provider as ReduxProvider} from 'react-redux';
 import {store} from 'store';
 import {ms} from 'utilities/scale_utils';
 import {darkTheme, lightTheme} from 'utilities/theme';
+import {showToast} from 'utilities/utils';
 
 globalThis.RNFB_SILENCE_MODULAR_DEPRECATION_WARNINGS = true;
 globalThis.RNFB_MODULAR_DEPRECATION_STRICT_MODE = true;
@@ -63,6 +66,25 @@ const toastConfig: ToastConfig = {
 
 const MainApp: React.FC = () => {
   const {isDarkTheme} = useThemeContext();
+  const {isConnected} = useNetInfo();
+  const previousConnection = React.useRef<boolean | null>(null);
+
+  React.useEffect(() => {
+    if (
+      previousConnection.current !== null &&
+      previousConnection.current !== isConnected
+    ) {
+      if (isConnected === false) {
+        showToast(
+          'No internet available! Please check your internet connection.',
+          'error',
+        );
+      } else if (isConnected === true) {
+        showToast('You are back online.', 'success');
+      }
+    }
+    previousConnection.current = isConnected;
+  }, [isConnected]);
 
   return (
     <>

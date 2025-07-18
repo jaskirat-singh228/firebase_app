@@ -84,6 +84,7 @@ const AnimatedLoaderButtonComp: React.FC<AnimatedLoaderButtonProps> = props => {
             borderColor: borderColor,
             alignSelf: alignSelfCenter ? 'center' : 'auto',
             minWidth: ms(50),
+            marginTop: ms(10),
           },
         ]}>
         {isLoading ? (

@@ -9,7 +9,6 @@ export const {height: SCREEN_HEIGHT, width: SCREEN_WIDTH} =
 export const {height: WINDOW_HEIGHT, width: WINDOW_WIDTH} =
   Dimensions.get('window');
 
-export const BASE_URL = '';
 export const PAGE_SIZE = 15;
 
 export const FONT_REGULAR = 'Roboto-Regular';

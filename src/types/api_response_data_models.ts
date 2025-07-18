@@ -5,6 +5,7 @@ export type TValidateLoginDetailResponse = {
 };
 
 export type TValidateLoginDetailData = {
+  userId: string;
   userEmail: string;
   userPassword?: string;
   token: string;

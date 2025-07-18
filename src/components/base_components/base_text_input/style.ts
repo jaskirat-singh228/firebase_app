@@ -8,9 +8,12 @@ export const style = (theme: MD3CustomTheme) =>
       width: '100%',
     },
     textInput: {
-      width: '100%',
       backgroundColor: theme.colors.textInput.background,
-      borderRadius: ms(10),
+      borderRadius: theme.radius.large,
+      width: '90%',
+      alignSelf: 'center',
+      margin: ms(10),
+      justifyContent: 'center',
       ...theme.fonts.regular,
     },
     label: {
